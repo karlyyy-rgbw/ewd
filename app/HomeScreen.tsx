@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";  
+import { CommonActions } from '@react-navigation/native';  
 import {  
   View,  
   Text,  
@@ -91,14 +92,21 @@ const HomeScreen: React.FC = () => {
   // Logout function  
   const handleLogout = async () => {  
     try {  
-      await AsyncStorage.removeItem("token");  
-      navigation.replace("LoginScreen");  
+        // Remove the token from AsyncStorage  
+        await AsyncStorage.removeItem("token");  
+        
+        // Reset navigation to the LoginScreen  
+        navigation.dispatch(  
+            CommonActions.reset({  
+                index: 0,  
+                routes: [{ name: "LoginScreens" }],  
+            })  
+        );  
     } catch (error) {  
-      console.error("Error removing token:", error);  
-      Alert.alert("Logout Failed", "Could not remove token.");  
+        console.error("Error removing token:", error);  
+        Alert.alert("Logout Failed", "Could not remove token.");  
     }  
-  };  
-
+};  
   if (!fontsLoaded) {  
     return null; // Optionally, add a splash screen or loading indicator here.  
 }  
@@ -120,27 +128,6 @@ return (
                 onPress={() => navigation.navigate('AddUser')} // Navigate to AddUser screen  
             >  
                 <Text style={styles.buttonText}>Create User</Text>  
-            </TouchableOpacity>  
-
-            <TouchableOpacity   
-                style={styles.button}   
-                onPress={() => navigation.navigate('UserDetail')} // Navigate to UserDetail screen  
-            >  
-                <Text style={styles.buttonText}>Read User</Text>  
-            </TouchableOpacity>  
-
-            <TouchableOpacity   
-                style={styles.button4}   
-                onPress={() => navigation.navigate('EditUser')} // Navigate to EditUser screen  
-            >  
-                <Text style={styles.buttonText}>Update User</Text>  
-            </TouchableOpacity>  
-
-            <TouchableOpacity   
-                style={styles.button}   
-                onPress={() => navigation.navigate('DeleteUser')} // Navigate to DeleteUser screen  
-            >  
-                <Text style={styles.buttonText}>Delete User</Text>  
             </TouchableOpacity>  
 
                         <TouchableOpacity style={styles.button2} onPress={handleLogout}>  

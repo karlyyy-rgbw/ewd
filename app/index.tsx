@@ -1,95 +1,48 @@
 import React, { useEffect, useState } from "react";  
-import { Text, View } from "react-native";  
-import { createDrawerNavigator } from "@react-navigation/drawer";  
+import { ActivityIndicator, Alert } from "react-native";  
 import { NavigationContainer } from "@react-navigation/native";  
+import { createNativeStackNavigator } from '@react-navigation/native-stack';  
 import AsyncStorage from "@react-native-async-storage/async-storage";  
 
-import LoginScreen from "./LoginScreen";  
+import LoginScreens from "./LoginScreen";  
 import HomeScreen from "./HomeScreen";  
-import RegistrationScreen from "./RegistrationScreen"; // ADD THIS LINE!  
-import UserDetail from "./UserDetail";
-import EditDetail from "./EditDetail";
-import AddUser from "./AddUser";
-import DeleteUser from "./DeleteUser";
+import RegistrationScreen from "./RegistrationScreen";  
+import AddUser from "./AddUser";  
 
-const Drawer = createDrawerNavigator();  
+const Stack = createNativeStackNavigator();  
 
-export default function Index() {  
-  const [token, setToken] = useState<string | null>(null);  
+export default function App() {  
+    const [token, setToken] = useState<string | null>(null);  
+    const [isLoading, setIsLoading] = useState(true);  
 
-  useEffect(() => {  
-    const checkToken = async () => {  
-      try {  
-        const storedToken = await AsyncStorage.getItem("token");  
-        console.log("Token from AsyncStorage:", storedToken); // Debugging  
-        setToken(storedToken);  
-      } catch (error) {  
-        console.error("Error getting token from AsyncStorage:", error);  
-      }  
-    };  
-    checkToken();  
-  }, []);  
+    useEffect(() => {  
+        const checkToken = async () => {  
+            try {  
+                const storedToken = await AsyncStorage.getItem("token");  
+                setToken(storedToken);  
+            } catch (error) {  
+                Alert.alert("Error", "Could not retrieve user session.");  
+            } finally {  
+                setIsLoading(false);  
+            }  
+        };  
+        checkToken();  
+    }, []);  
 
-  console.log("Current Token Value:", token); // Debugging  
+    // Display a loading indicator while checking for token  
+    if (isLoading) {  
+        return <ActivityIndicator size="large" color="#0000ff" />;  
+    }  
 
-  return (  
-      <Drawer.Navigator>  
-        {token ? (  
-          <Drawer.Screen name="Home" component={HomeScreen} />  
-        ) : (  
-          <>  
-            <Drawer.Screen  
-              name="Login"  
-              component={LoginScreen}  
-              options={{  
-                headerShown: false,  
-              }}  
-            />  
-            <Drawer.Screen  
-              name="Register"  
-              component={RegistrationScreen}  
-              options={{  
-                headerShown: false,  
-              }}  
-            />  
-                        <Drawer.Screen  
-              name="Home"  
-              component={HomeScreen}  
-              options={{  
-                headerShown: false,  
-              }}  
-            />  
-                                    <Drawer.Screen  
-              name="Delete"  
-              component={DeleteUser}  
-              options={{  
-                headerShown: false,  
-              }}  
-            />  
-                                   <Drawer.Screen  
-              name="Add"  
-              component={AddUser}  
-              options={{  
-                headerShown: false,  
-              }}  
-            />  
-                                   <Drawer.Screen  
-              name="Read"  
-              component={UserDetail}  
-              options={{  
-                headerShown: false,  
-              }}  
-            />  
-                                   <Drawer.Screen  
-              name="Edit"  
-              component={EditDetail}  
-              options={{  
-                headerShown: false,  
-              }}  
-            />  
-           
-          </>  
-        )}  
-      </Drawer.Navigator>  
-  );  
+    return (  
+        // Wrap NavigationContainer around your Stack Navigator  
+        <NavigationContainer>  
+            <Stack.Navigator initialRouteName={token ? "HomeScreen" : "LoginScreens"} screenOptions={{ headerShown: false }}>  
+                <Stack.Screen name="HomeScreen" component={HomeScreen} />  
+                <Stack.Screen name="AddUser" component={AddUser} />  
+                <Stack.Screen name="LoginScreens" component={LoginScreens} />  
+                <Stack.Screen name="RegistrationScreen" component={RegistrationScreen} />  
+            </Stack.Navigator>  
+        </NavigationContainer>  
+    );  
 }  

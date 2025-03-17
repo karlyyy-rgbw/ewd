@@ -62,10 +62,10 @@ const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigation }) =
             Alert.alert("Registration Failed", "Passwords do not match");  
             return;  
         }  
-
-        setIsRegistering(true); // Disable the button  
+    
+        setIsRegistering(true);  
         try {  
-            const response = await axios.post<RegistrationResponse>( // Specify the expected response type  
+            const response = await axios.post<RegistrationResponse>(  
                 "https://adetbackend.onrender.com/api/auth/register",  
                 {  
                     fullname,  
@@ -73,10 +73,14 @@ const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigation }) =
                     password,  
                 }  
             );  
-
-            setRegistrationSuccessful(true);  
-            navigation.navigate("LoginScreen");  
-        } catch (error: any) { // Type the error as 'any' or AxiosError  
+    
+            // Show the success alert and navigate  
+            Alert.alert(  
+                "Registration Successful",  
+                "Please login with your new credentials",  
+                [{ text: "OK", onPress: () => navigation.navigate("LoginScreens") }]  
+            );  
+        } catch (error: any) {  
             if (axios.isAxiosError(error)) {  
                 const axiosError = error as AxiosError;  
                 Alert.alert(  
@@ -87,7 +91,7 @@ const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigation }) =
                 Alert.alert("Registration Failed", "An unexpected error occurred");  
             }  
         } finally {  
-            setIsRegistering(false); //Re-enable button  
+            setIsRegistering(false);  
         }  
     };  
 

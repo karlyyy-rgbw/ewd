@@ -1,16 +1,22 @@
-import { Stack } from 'expo-router';  
+// _layout.jsx  
+import React from 'react';  
+import { View, StyleSheet } from 'react-native';  
 
-export default function RootLayout() {  
-  return (  
-    <Stack>  
-      <Stack.Screen name="index" options={{ headerShown: false }} />  
-      <Stack.Screen name="HomeScreen" options={{ headerShown: false }} />  
-      <Stack.Screen name="LoginScreen" options={{  headerShown: false }} /> 
-      <Stack.Screen name="RegistrationScreen" options={{  headerShown: false }} /> 
-      <Stack.Screen name="EditDetail" options={{ headerShown: false }} />  
-      <Stack.Screen name="AddUser" options={{ headerShown: false }} />  
-      <Stack.Screen name="DeleteUser" options={{  headerShown: false }} /> 
-      <Stack.Screen name="UserDetail" options={{  headerShown: false }} /> 
-    </Stack>
-  );  
-} 
+const Layout = ({ children }) => {  
+    return (  
+        <View style={styles.container}>  
+            {/* Here you can add a common header or footer if needed */}  
+            {children}  
+        </View>  
+    );  
+};  
+
+const styles = StyleSheet.create({  
+    container: {  
+        flex: 1,  
+        padding: 16,  
+        backgroundColor: '#fff', // Change to desired background color  
+    },  
+});  
+
+export default Layout;  

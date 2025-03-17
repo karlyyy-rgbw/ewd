@@ -1,7 +1,7 @@
 import axios from 'axios';  
 import AsyncStorage from "@react-native-async-storage/async-storage";  
 
-const API_URL = 'https://devapi-618v.onrender.com/api/';  // Make sure this is the correct URL  
+const API_URL = 'https://adetbackend.onrender.com/api/';  // Make sure this is the correct URL  
 const api = axios.create({ baseURL: API_URL });  
 
 // Attach JWT token to requests  

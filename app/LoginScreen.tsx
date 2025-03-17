@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";  
+import { CommonActions } from '@react-navigation/native';  
 import {  
   View,  
   Text,  
@@ -21,54 +22,35 @@ import { useNavigation } from '@react-navigation/native';
 
 SplashScreen.preventAutoHideAsync();  
 
-const LoginScreen: React.FC = () => {  
-  // Use useNavigation hook to get navigation prop  
-  const navigation = useNavigation();   
-  const [email, setEmail] = useState("");  
-  const [password, setPassword] = useState("");  
-  const [appIsReady, setAppIsReady] = useState(false);  
-
-  const [fontsLoaded] = useFonts({  
-    "Potta-One": require("../assets/fonts/PottaOne-Regular.ttf"),  
-  });  
-
-  useEffect(() => {  
-    async function prepare() {  
-      try {  
-        await SplashScreen.preventAutoHideAsync();  
-        await new Promise(resolve => setTimeout(resolve, 2000));  
-      } catch (e) {  
-        console.warn(e);  
-      } finally {  
-        setAppIsReady(true);  
-        await SplashScreen.hideAsync();  
-      }  
-    }  
-
-    prepare();  
-  }, [fontsLoaded]);  
+const LoginScreens = ({ navigation }) => {  
+  const [email, setEmail] = useState('');  
+  const [password, setPassword] = useState('');  
 
   const handleLogin = async () => {  
-    try {  
-      const response = await axios.post(  
-        "https://adetbackend.onrender.com/api/auth/login",  
-        {  
-          email,  
-          password,  
-        }  
-      );  
+      try {  
+          const response = await axios.post(  
+              "https://adetbackend.onrender.com/api/auth/login",  
+              {  
+                  email,  
+                  password,  
+              }  
+          );  
 
-      // Store the token in AsyncStorage  
-      await AsyncStorage.setItem("token", response.data.token);  
-      navigation.replace("HomeScreen"); // Navigate to HomeScreen after login  
-    } catch (error) {  
-      Alert.alert("Login Failed", "Invalid email or password");  
-    }  
+          // Store the token in AsyncStorage  
+          await AsyncStorage.setItem("token", response.data.token);  
+          
+          // Reset the navigation stack to navigate to HomeScreen  
+          navigation.dispatch(  
+              CommonActions.reset({  
+                  index: 0,  
+                  routes: [{ name: "HomeScreen" }], // Navigate to HomeScreen  
+              })  
+          );  
+      } catch (error) {  
+          Alert.alert("Login Failed", "Invalid email or password");  
+      }  
   };  
 
-  if (!appIsReady) {  
-    return null;  
-  }  
 
   return (  
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>  
@@ -201,4 +183,4 @@ const styles = StyleSheet.create({
   },  
 });  
 
-export default LoginScreen;  
+export default LoginScreens;  
