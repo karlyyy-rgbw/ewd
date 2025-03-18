@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, Modal, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, Modal, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import axios from 'axios';
-import Swal from 'sweetalert2';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface User {
@@ -22,23 +21,23 @@ const AddUser: React.FC = () => {
   const [password, setPassword] = useState('');
   const [validationError, setValidationError] = useState<Record<string, string>>({});
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-
   const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch token from AsyncStorage
     const fetchToken = async () => {
-      const token = await AsyncStorage.getItem('token');
-      if (token) {
-        setToken(token); // Set the token directly as a string
+      const storedToken = await AsyncStorage.getItem('token');
+      if (storedToken) {
+        setToken(storedToken);
       }
+      setLoading(false);
     };
     fetchToken();
   }, []);
 
   const headers = {
     accept: 'application/json',
-    Authorization: token || '', // Use token from state
+    Authorization: token || '',
   };
 
   useEffect(() => {
@@ -51,37 +50,38 @@ const AddUser: React.FC = () => {
     try {
       const { data } = await axios.get<User[]>(`${API_ENDPOINT}`, { headers });
       setUsers(data);
+      setLoading(false);  // Hide loading spinner once users are fetched
     } catch (error) {
       console.error('Error fetching users:', error);
+      setLoading(false);  // Hide loading spinner even if there's an error
     }
   };
 
   const deleteUser = async (id: number) => {
-    const isConfirm = await Swal.fire({
-      title: 'Are you sure?',
-      text: "You won't be able to revert this!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, delete it!',
-    });
-
-    if (!isConfirm.isConfirmed) return;
-
-    try {
-      await axios.delete(`${API_ENDPOINT}${id}`, { headers });
-      Swal.fire({
-        icon: 'success',
-        text: 'Successfully Deleted',
-      });
-      fetchUsers();
-    } catch (error) {
-      Swal.fire({
-        text: error.response?.data?.message || 'An error occurred',
-        icon: 'error',
-      });
-    }
+    Alert.alert(
+      'Are you sure?',
+      "You won't be able to revert this!",
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Yes, delete it!',
+          onPress: async () => {
+            try {
+              const response = await axios.delete(`${API_ENDPOINT}${id}`, { headers });
+              Alert.alert('Success', 'Successfully Deleted', [{ text: 'OK' }]);
+              fetchUsers();
+            } catch (error) {
+              Alert.alert('Error', error.response?.data?.message || 'An error occurred while deleting the user.', [{ text: 'OK' }]);
+              console.log(error);
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
   };
 
   const handleClose = () => setShow(false);
@@ -113,79 +113,76 @@ const AddUser: React.FC = () => {
     setValidationError({});
   };
 
-  const createUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const createUser = async () => {
     try {
       const { data } = await axios.post(`${API_ENDPOINT}`, { fullname, email, password }, { headers });
-      Swal.fire({
-        icon: 'success',
-        text: data.message,
-      });
+      Alert.alert('Success', data.message, [{ text: 'OK' }]);
       fetchUsers();
       handleClose();
     } catch (error) {
       if (error.response?.status === 422) {
         setValidationError(error.response.data.errors);
       } else {
-        Swal.fire({
-          text: error.response?.data?.message || 'An unexpected error occurred.',
-          icon: 'error',
-        });
+        Alert.alert(
+          'Error',
+          error.response?.data?.message || 'An unexpected error occurred.',
+          [{ text: 'OK' }]
+        );
       }
     }
   };
 
-  const updateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const updateUser = async () => {
     if (!selectedUser) return;
 
     try {
       const { data } = await axios.put(`${API_ENDPOINT}${selectedUser.user_id}`, { fullname, email, password }, { headers });
-      Swal.fire({
-        icon: 'success',
-        text: data.message,
-      });
+      Alert.alert('Success', data.message, [{ text: 'OK' }]);
       fetchUsers();
       handleUpdateClose();
     } catch (error) {
       if (error.response?.status === 422) {
         setValidationError(error.response.data.errors);
       } else {
-        Swal.fire({
-          text: error.response?.data?.message || 'An unexpected error occurred.',
-          icon: 'error',
-        });
+        Alert.alert(
+          'Error',
+          error.response?.data?.message || 'An unexpected error occurred.',
+          [{ text: 'OK' }]
+        );
       }
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>User Management</Text>
+      <Text style={styles.title}>Welcome</Text>
       <Button title="Create User" onPress={handleShow} />
 
-      <ScrollView>
-        {users.map((user) => (
-          <View key={user.user_id} style={styles.userItem}>
-            <Text style={styles.userText}>ID: {user.user_id}</Text>
-            <Text style={styles.userText}>Fullname: {user.fullname}</Text>
-            <Text style={styles.userText}>Email: {user.email}</Text>
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.button} onPress={() => handleShow1(user)}>
-                <Text style={styles.buttonText}>Read</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.button} onPress={() => handleUpdateShow(user)}>
-                <Text style={styles.buttonText}>Update</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.button} onPress={() => deleteUser(user.user_id)}>
-                <Text style={styles.buttonText}>Delete</Text>
-              </TouchableOpacity>
+      {/* Show loading spinner while data is being fetched */}
+      {loading ? (
+        <ActivityIndicator size="large" color="#90BE6D" />
+      ) : (
+        <ScrollView>
+          {users.map((user) => (
+            <View key={user.user_id} style={styles.userItem}>
+              <Text style={styles.userText}>ID: {user.user_id}</Text>
+              <Text style={styles.userText}>Fullname: {user.fullname}</Text>
+              <Text style={styles.userText}>Email: {user.email}</Text>
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity style={styles.button} onPress={() => handleShow1(user)}>
+                  <Text style={styles.buttonText}>Read</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.button} onPress={() => handleUpdateShow(user)}>
+                  <Text style={styles.buttonText}>Update</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.button} onPress={() => deleteUser(user.user_id)}>
+                  <Text style={styles.buttonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        ))}
-      </ScrollView>
+          ))}
+        </ScrollView>
+      )}
 
       {/* Create User Modal */}
       <Modal visible={show} animationType="slide" transparent>
@@ -198,12 +195,16 @@ const AddUser: React.FC = () => {
               value={fullname}
               onChangeText={setFullname}
             />
+            {validationError.fullname && <Text style={styles.errorText}>{validationError.fullname}</Text>}
+
             <TextInput
               style={styles.input}
               placeholder="Email"
               value={email}
               onChangeText={setEmail}
             />
+            {validationError.email && <Text style={styles.errorText}>{validationError.email}</Text>}
+
             <TextInput
               style={styles.input}
               placeholder="Password"
@@ -211,6 +212,8 @@ const AddUser: React.FC = () => {
               onChangeText={setPassword}
               secureTextEntry
             />
+            {validationError.password && <Text style={styles.errorText}>{validationError.password}</Text>}
+
             <Button title="Save" onPress={createUser} />
             <Button title="Close" onPress={handleClose} />
           </View>
@@ -247,12 +250,16 @@ const AddUser: React.FC = () => {
               value={fullname}
               onChangeText={setFullname}
             />
+            {validationError.fullname && <Text style={styles.errorText}>{validationError.fullname}</Text>}
+
             <TextInput
               style={styles.input}
               placeholder="Email"
               value={email}
               onChangeText={setEmail}
             />
+            {validationError.email && <Text style={styles.errorText}>{validationError.email}</Text>}
+
             <TextInput
               style={styles.input}
               placeholder="Password"
@@ -260,6 +267,8 @@ const AddUser: React.FC = () => {
               onChangeText={setPassword}
               secureTextEntry
             />
+            {validationError.password && <Text style={styles.errorText}>{validationError.password}</Text>}
+
             <Button title="Update" onPress={updateUser} />
             <Button title="Close" onPress={handleUpdateClose} />
           </View>
@@ -333,6 +342,10 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 10,
     marginBottom: 15,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
   },
 });
 
