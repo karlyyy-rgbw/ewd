@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { CommonActions } from '@react-navigation/native';
 import {
   View,
   Text,
   TextInput,
-  Button,
   Alert,
   StyleSheet,
   ImageBackground,
@@ -15,19 +14,30 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  StatusBar,
+  Modal,
+  ScrollView
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { BlurView } from "expo-blur";
 import * as SplashScreen from 'expo-splash-screen';
 import Icon from 'react-native-vector-icons/FontAwesome';
-
+import { SafeAreaView } from "react-native-safe-area-context";
 SplashScreen.preventAutoHideAsync();
 
 const LoginScreens = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  
+  // Registration form states
+  const [fullname, setFullname] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isRegistering, setIsRegistering] = useState(false);
 
   const handleLogin = async () => {
     setIsLoading(true);
@@ -40,13 +50,9 @@ const LoginScreens = ({ navigation }) => {
         }
       );
 
-      // Store the token in AsyncStorage
       await AsyncStorage.setItem("token", response.data.token);
-
-      // Set the token for future requests globally
       axios.defaults.headers['Authorization'] = `Bearer ${response.data.token}`;
 
-      // Reset the navigation stack to navigate to HomeScreen
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
@@ -60,89 +66,240 @@ const LoginScreens = ({ navigation }) => {
     }
   };
 
+  const handleRegistration = async () => {
+    if (regPassword !== confirmPassword) {
+      Alert.alert("Registration Failed", "Passwords do not match");
+      return;
+    }
+    
+    setIsRegistering(true);
+    try {
+      const response = await axios.post(
+        "https://adetbackend.onrender.com/api/auth/register",
+        {
+          fullname,
+          email: regEmail,
+          password: regPassword,
+        }
+      );
+
+      Alert.alert(
+        "Registration Successful",
+        "Please login with your new credentials",
+        [
+          { 
+            text: "OK", 
+            onPress: () => {
+              setShowRegisterModal(false);
+              setEmail(regEmail);
+              setPassword("");
+            } 
+          }
+        ]
+      );
+    } catch (error) {
+      Alert.alert(
+        "Registration Failed", 
+        error.response?.data?.message || "An error occurred"
+      );
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <ImageBackground
-        source={require("../assets/images/aes.jpg")}
-        style={styles.backgroundImage}
-      >
-        <View style={styles.blurContainer}>
-          <BlurView intensity={80} style={styles.blurView} tint="dark">
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-              style={styles.loginContainer}
-            >
-              <Text style={[styles.logoTitle, { fontFamily: "Potta-One" }]}>
-                PIPOL
-              </Text>
-              <Image
-                source={require("../assets/images/pngegg.png")}
-                style={styles.logo}
-              />
-              <Text style={styles.label}>Email:</Text>
-              <View style={styles.inputContainer}>
-                <Icon name="envelope" size={20} color="#A9A9A9" style={styles.inputIcon} />
-                <TextInput
-                  value={email}
-                  onChangeText={setEmail}
-                  style={styles.input}
-                  placeholder="Your Email"
-                  placeholderTextColor="#A9A9A9"
-                />
-              </View>
+    <>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" /> 
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.container}>
+          <ImageBackground
+            source={require("../assets/images/j.jpg")}
+            style={styles.backgroundImage}
+            resizeMode="cover"
+          >
+            <BlurView intensity={80} style={styles.blurView} tint="dark">
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.keyboardAvoidingView}
+              >
+                <View style={styles.loginContainer}>
+                  <Text style={[styles.logoTitle, { fontFamily: "Potta-One" }]}>
+                    PIPOL
+                  </Text>
+                  <Image
+                    source={require("../assets/images/pngegg.png")}
+                    style={styles.logo}
+                  />
+                  <Text style={styles.label}>Email:</Text>
+                  <View style={styles.inputContainer}>
+                    <Icon name="envelope" size={20} color="#A9A9A9" style={styles.inputIcon} />
+                    <TextInput
+                      value={email}
+                      onChangeText={setEmail}
+                      style={styles.input}
+                      placeholder="Your Email"
+                      placeholderTextColor="#A9A9A9"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                    />
+                  </View>
 
-              <Text style={styles.label}>Password:</Text>
-              <View style={styles.inputContainer}>
-                <Icon name="lock" size={20} color="#A9A9A9" style={styles.inputIcon} />
-                <TextInput
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  style={styles.input}
-                  placeholder="Your Password"
-                  placeholderTextColor="#A9A9A9"
-                />
-              </View>
+                  <Text style={styles.label}>Password:</Text>
+                  <View style={styles.inputContainer}>
+                    <Icon name="lock" size={20} color="#A9A9A9" style={styles.inputIcon} />
+                    <TextInput
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry
+                      style={styles.input}
+                      placeholder="Your Password"
+                      placeholderTextColor="#A9A9A9"
+                    />
+                  </View>
 
-              <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={isLoading}>
-                {isLoading ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.buttonText}>Login</Text>
-                )}
-              </TouchableOpacity>
+                  <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={isLoading}>
+                    {isLoading ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Text style={styles.buttonText}>Login</Text>
+                    )}
+                  </TouchableOpacity>
 
-              {/* Link to RegistrationScreen */}
-              <View style={styles.registerContainer}>
-                <Text style={styles.registerText}>
-                  Don't have an account?{" "}
-                </Text>
-                <TouchableOpacity onPress={() => navigation.navigate("RegistrationScreen")}>
-                  <Text style={[styles.registerLink, styles.underline]}>Register here</Text>
-                </TouchableOpacity>
-              </View>
-            </KeyboardAvoidingView>
-          </BlurView>
+                  <View style={styles.registerContainer}>
+                    <Text style={styles.registerText}>
+                      Don't have an account?{" "}
+                    </Text>
+                    <TouchableOpacity onPress={() => setShowRegisterModal(true)}>
+                      <Text style={[styles.registerLink, styles.underline]}>Register here</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </KeyboardAvoidingView>
+            </BlurView>
+          </ImageBackground>
         </View>
-      </ImageBackground>
-    </TouchableWithoutFeedback>
+      </TouchableWithoutFeedback>
+
+      {/* Registration Modal */}
+      <Modal
+        visible={showRegisterModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowRegisterModal(false)}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.modalContainer}>
+            <BlurView intensity={100} style={styles.modalBlurView} tint="dark">
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.modalContent}
+              >
+                <ScrollView contentContainerStyle={styles.scrollContainer}>
+                  <TouchableOpacity 
+                    style={styles.closeButton} 
+                    onPress={() => setShowRegisterModal(false)}
+                  >
+                    <Icon name="times" size={24} color="white" />
+                  </TouchableOpacity>
+                  
+                  <Text style={[styles.logoTitle, { fontFamily: "Potta-One" }]}>
+                    Register
+                  </Text>
+                  <Image
+                    source={require("../assets/images/pngegg.png")}
+                    style={styles.logo}
+                  />
+
+                  <Text style={styles.label}>Full Name:</Text>
+                  <View style={styles.inputContainer}>
+                    <Icon name="user" size={20} color="#A9A9A9" style={styles.inputIcon} />
+                    <TextInput
+                      value={fullname}
+                      onChangeText={setFullname}
+                      style={styles.input}
+                      placeholder="Your Full Name"
+                      placeholderTextColor="#A9A9A9"
+                    />
+                  </View>
+
+                  <Text style={styles.label}>Email:</Text>
+                  <View style={styles.inputContainer}>
+                    <Icon name="envelope" size={20} color="#A9A9A9" style={styles.inputIcon} />
+                    <TextInput
+                      value={regEmail}
+                      onChangeText={setRegEmail}
+                      style={styles.input}
+                      placeholder="Your Email"
+                      placeholderTextColor="#A9A9A9"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                    />
+                  </View>
+
+                  <Text style={styles.label}>Password:</Text>
+                  <View style={styles.inputContainer}>
+                    <Icon name="lock" size={20} color="#A9A9A9" style={styles.inputIcon} />
+                    <TextInput
+                      value={regPassword}
+                      onChangeText={setRegPassword}
+                      secureTextEntry
+                      style={styles.input}
+                      placeholder="Your Password"
+                      placeholderTextColor="#A9A9A9"
+                    />
+                  </View>
+
+                  <Text style={styles.label}>Confirm Password:</Text>
+                  <View style={styles.inputContainer}>
+                    <Icon name="lock" size={20} color="#A9A9A9" style={styles.inputIcon} />
+                    <TextInput
+                      value={confirmPassword}
+                      onChangeText={setConfirmPassword}
+                      secureTextEntry
+                      style={styles.input}
+                      placeholder="Confirm Your Password"
+                      placeholderTextColor="#A9A9A9"
+                    />
+                  </View>
+
+                  <TouchableOpacity 
+                    style={styles.button} 
+                    onPress={handleRegistration} 
+                    disabled={isRegistering}
+                  >
+                    {isRegistering ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Text style={styles.buttonText}>Register</Text>
+                    )}
+                  </TouchableOpacity>
+                </ScrollView>
+              </KeyboardAvoidingView>
+            </BlurView>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   backgroundImage: {
     flex: 1,
-    resizeMode: "cover",
-    justifyContent: "center",
-  },
-  blurContainer: {
-    flex: 1,
-    padding: 20,
-    justifyContent: "center",
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
   },
   blurView: {
-    borderRadius: 20,
-    overflow: "hidden",
+      flex: 1,
+      justifyContent: 'center',
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+    justifyContent: 'center',
   },
   loginContainer: {
     padding: 20,
@@ -167,6 +324,8 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "white",
     marginBottom: 5,
+    alignSelf: 'flex-start',
+    marginLeft: 10,
   },
   inputContainer: {
     flexDirection: "row",
@@ -178,9 +337,10 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     padding: 10,
     color: "#242424",
+    width: '100%',
   },
   input: {
-    width: "80%",
+    flex: 1,
     height: 20,
     color: "#242424",
     paddingLeft: 10,
@@ -206,7 +366,7 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: "#90BE6D",
-    padding: 10,
+    padding: 15,
     borderRadius: 5,
     alignItems: "center",
     width: "100%",
@@ -215,6 +375,30 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#FFFFFF",
     fontWeight: "bold",
+  },
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalBlurView: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  modalContent: {
+    flex: 1,
+    justifyContent: 'center',
+    marginHorizontal: 20,
+  },
+  scrollContainer: {
+    padding: 20,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+  closeButton: {
+    alignSelf: 'flex-end',
+    padding: 10,
   },
 });
 
