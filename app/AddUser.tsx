@@ -74,10 +74,8 @@ const AddUser: React.FC = () => {
               Authorization: `Bearer ${storedToken}`
             }
           });
-          setCurrentUserName(response.data.fullname);
         }
       } catch (error) {
-        console.error('Error fetching user data:', error);
       } finally {
         setLoading(false);
       }
@@ -103,7 +101,6 @@ const AddUser: React.FC = () => {
       setUsers(data);
     } catch (error) {
       console.error('Error fetching users:', error);
-      Alert.alert('Error', 'Failed to fetch users');
     } finally {
       setLoading(false);
     }
@@ -122,7 +119,7 @@ const AddUser: React.FC = () => {
       Alert.alert('Success', 'User deleted successfully');
       fetchUsers();
     } catch (error) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to delete user');
+      Alert.alert('Error', 'Failed to delete user');
     } finally {
       setShowDeleteModal(false);
     }
@@ -146,7 +143,7 @@ const AddUser: React.FC = () => {
       if (error.response?.status === 422) {
         setValidationError(error.response.data.errors);
       } else {
-        Alert.alert('Error', error.response?.data?.message || 'Failed to create user');
+        Alert.alert('Error', 'Failed to create user');
       }
     }
   };
@@ -168,7 +165,7 @@ const AddUser: React.FC = () => {
       if (error.response?.status === 422) {
         setValidationError(error.response.data.errors);
       } else {
-        Alert.alert('Error', error.response?.data?.message || 'Failed to update user');
+        Alert.alert('Error', 'Failed to update user');
       }
     }
   };

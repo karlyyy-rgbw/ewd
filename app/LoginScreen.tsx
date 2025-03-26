@@ -117,7 +117,7 @@ const LoginScreens = ({ navigation }) => {
             style={styles.backgroundImage}
             resizeMode="cover"
           >
-            <BlurView intensity={80} style={styles.blurView} tint="dark">
+            <BlurView intensity={30} style={styles.blurView} tint="dark">
               <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardAvoidingView}
